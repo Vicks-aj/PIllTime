@@ -15,22 +15,22 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       title: "Never Miss a Dose",
       description:
           "Set smart reminders for all your medications and get notified at the perfect time.",
-      imagePath: "assets/images/onboarding_1.jpg", // Your custom image
-      icon: Icons.medication, // Fallback icon
+      imagePath: "assets/images/onboarding_1.jpg",
+      icon: Icons.medication,
     ),
     OnboardingPage(
       title: "Track Your Health",
       description:
           "Monitor your medication adherence with detailed progress tracking and insights.",
-      imagePath: "assets/images/onboarding_2.jpg", // Your custom image
-      icon: Icons.analytics, // Fallback icon
+      imagePath: "assets/images/onboarding_2.jpg",
+      icon: Icons.analytics,
     ),
     OnboardingPage(
       title: "Stay Organized",
       description:
           "Manage multiple medications with ease using our intuitive scheduling system.",
-      imagePath: "assets/images/onboarding_3.jpg", // Your custom image
-      icon: Icons.schedule, // Fallback icon
+      imagePath: "assets/images/onboarding_3.jpg",
+      icon: Icons.schedule,
     ),
   ];
 

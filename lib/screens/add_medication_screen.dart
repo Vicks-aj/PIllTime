@@ -14,6 +14,10 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final _nameController = TextEditingController();
   final _dosageController = TextEditingController();
   final _notesController = TextEditingController();
+  final _startDateController =
+      TextEditingController(); // New controller for start date
+  final _endDateController =
+      TextEditingController(); // New controller for end date
 
   String _frequency = 'Once daily';
   List<String> _reminderTimes = ['08:00'];
@@ -47,10 +51,18 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
   final NotificationService _notificationService = NotificationService();
 
   @override
+  void initState() {
+    super.initState();
+    _startDateController.text = DateFormat('MMM d, y').format(_startDate);
+  }
+
+  @override
   void dispose() {
     _nameController.dispose();
     _dosageController.dispose();
     _notesController.dispose();
+    _startDateController.dispose();
+    _endDateController.dispose();
     super.dispose();
   }
 
@@ -109,14 +121,16 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
     }
   }
 
-  Future<void> _selectDate(bool isStartDate) async {
+  Future<void> _selectDate(BuildContext context, bool isStartDate) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: isStartDate
           ? _startDate
-          : (_endDate ?? DateTime.now().add(Duration(days: 30))),
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(Duration(days: 365)),
+          : (_endDate ?? _startDate.add(Duration(days: 30))),
+      firstDate: DateTime.now()
+          .subtract(Duration(days: 365)), // Allow past dates for start date
+      lastDate: DateTime.now()
+          .add(Duration(days: 365 * 5)), // 5 years into the future
       builder: (context, child) {
         return Theme(
           data: Theme.of(context).copyWith(
@@ -133,8 +147,20 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
       setState(() {
         if (isStartDate) {
           _startDate = picked;
+          _startDateController.text = DateFormat('MMM d, y').format(_startDate);
+          // Ensure end date is not before start date
+          if (_endDate != null && _endDate!.isBefore(_startDate)) {
+            _endDate = _startDate;
+            _endDateController.text = DateFormat('MMM d, y').format(_endDate!);
+          }
         } else {
           _endDate = picked;
+          _endDateController.text = DateFormat('MMM d, y').format(_endDate!);
+          // Ensure end date is not before start date
+          if (_endDate!.isBefore(_startDate)) {
+            _endDate = _startDate;
+            _endDateController.text = DateFormat('MMM d, y').format(_endDate!);
+          }
         }
       });
     }
@@ -312,6 +338,7 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                             }
                           },
                         ),
+
                         if (_reminderTimes.isNotEmpty) ...[
                           SizedBox(height: 16),
                           Text(
@@ -367,6 +394,59 @@ class _AddMedicationScreenState extends State<AddMedicationScreen> {
                             );
                           }).toList(),
                         ],
+                        SizedBox(height: 16),
+                        // Start Date Field
+                        GestureDetector(
+                          onTap: () => _selectDate(context, true),
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _startDateController,
+                              decoration: InputDecoration(
+                                labelText: 'Start Date',
+                                prefixIcon: Icon(Icons.calendar_today,
+                                    color: Color(0xFF1E3A8A)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: Color(0xFF1E3A8A), width: 2),
+                                ),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Please select a start date';
+                                }
+                                return null;
+                              },
+                            ),
+                          ),
+                        ),
+                        SizedBox(height: 16),
+                        // End Date Field (Optional)
+                        GestureDetector(
+                          onTap: () => _selectDate(context, false),
+                          child: AbsorbPointer(
+                            child: TextFormField(
+                              controller: _endDateController,
+                              decoration: InputDecoration(
+                                labelText: 'End Date (Optional)',
+                                hintText: 'Select an end date',
+                                prefixIcon:
+                                    Icon(Icons.event, color: Color(0xFF1E3A8A)),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(
+                                      color: Color(0xFF1E3A8A), width: 2),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     ),
 

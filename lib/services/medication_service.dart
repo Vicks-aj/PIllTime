@@ -182,23 +182,40 @@ class MedicationService {
       final existingLogs = await getAllMedicationLogs();
       final newLogs = <MedicationLogModel>[];
 
-      // Remove existing future logs for this medication
+      // Filter out future logs for this medication that haven't been taken/skipped
+      // We want to regenerate these to ensure accuracy after updates
       final filteredLogs = existingLogs.where((log) {
+        // Keep logs that are from the past OR have already been taken/skipped
         return log.medicationId != medication.id ||
-            log.scheduledTime.isBefore(DateTime.now());
+            log.isTaken ||
+            log.isSkipped ||
+            log.scheduledTime.isBefore(DateTime.now().subtract(
+                Duration(minutes: 1))); // Keep past logs with a small buffer
       }).toList();
 
-      // Generate logs for the next 30 days
-      final startDate = DateTime.now();
-      for (int day = 0; day < 30; day++) {
-        final currentDate = startDate.add(Duration(days: day));
+      // Determine the effective start date for generating new logs
+      // Start from the medication's start date, but not before the beginning of today
+      final today = DateTime.now();
+      final startOfToday = DateTime(today.year, today.month, today.day);
+      final effectiveLogGenerationStartDate = medication.startDate
+              .isAfter(startOfToday)
+          ? medication.startDate
+          : startOfToday; // Start from the beginning of today if medication started in past or today
 
-        // Skip if before medication start date
-        if (currentDate.isBefore(medication.startDate)) continue;
+      // Generate logs for the next 30 days (or until endDate)
+      for (int day = 0; day < 31; day++) {
+        // Generate for today + 30 days
+        final currentDate = DateTime(
+          effectiveLogGenerationStartDate.year,
+          effectiveLogGenerationStartDate.month,
+          effectiveLogGenerationStartDate.day,
+        ).add(Duration(days: day));
 
-        // Skip if after medication end date
+        // Stop if current date is after medication end date
         if (medication.endDate != null &&
-            currentDate.isAfter(medication.endDate!)) break;
+            currentDate.isAfter(medication.endDate!)) {
+          break;
+        }
 
         // Generate logs for each reminder time
         for (String timeString in medication.reminderTimes) {
@@ -214,15 +231,23 @@ class MedicationService {
             minute,
           );
 
-          // Only create future logs
-          if (scheduledDateTime.isAfter(DateTime.now())) {
+          // Only add if it's not a duplicate of an existing log that was kept
+          // (e.g., already taken/skipped, or a past log)
+          final isDuplicate = filteredLogs.any((log) =>
+              log.medicationId == medication.id &&
+              log.scheduledTime.year == scheduledDateTime.year &&
+              log.scheduledTime.month == scheduledDateTime.month &&
+              log.scheduledTime.day == scheduledDateTime.day &&
+              log.scheduledTime.hour == scheduledDateTime.hour &&
+              log.scheduledTime.minute == scheduledDateTime.minute);
+
+          if (!isDuplicate) {
             final log = MedicationLogModel(
               id: '${medication.id}_${scheduledDateTime.millisecondsSinceEpoch}',
               medicationId: medication.id,
               scheduledTime: scheduledDateTime,
               createdAt: DateTime.now(),
             );
-
             newLogs.add(log);
           }
         }

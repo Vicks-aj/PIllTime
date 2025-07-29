@@ -60,28 +60,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF1E3A8A), // Primary blue background
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: PageView.builder(
-                controller: _pageController,
-                onPageChanged: (index) {
-                  setState(() {
-                    _currentPage = index;
-                  });
-                },
-                itemCount: _pages.length,
-                itemBuilder: (context, index) {
-                  return _buildPage(_pages[index]);
-                },
-              ),
+      backgroundColor: Color(0xFFFFFFFF),
+      body: Column(
+        children: [
+          Expanded(
+            child: PageView.builder(
+              controller: _pageController,
+              onPageChanged: (index) {
+                setState(() {
+                  _currentPage = index;
+                });
+              },
+              itemCount: _pages.length,
+              itemBuilder: (context, index) {
+                return _buildPage(_pages[index]);
+              },
             ),
+          ),
 
-            // Bottom navigation area
-            Container(
-              padding: EdgeInsets.all(24),
+          // Bottom navigation area
+          Container(
+            padding: EdgeInsets.all(24),
+            color: Color(0xFFFFFFFF),
+            child: SafeArea(
+              top: false, // Only apply safe area to bottom
               child: Column(
                 children: [
                   // Page indicators
@@ -105,7 +107,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         child: Text(
                           'SKIP',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.7),
+                            color: Color(0xFF6B7280),
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
                             letterSpacing: 1.2,
@@ -117,12 +119,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         onPressed: _nextPage,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _currentPage == _pages.length - 1
-                              ? Color(0xFF10B981)
-                              : Colors.white,
-                          foregroundColor: _currentPage == _pages.length - 1
-                              ? Colors.white
-                              : Color(0xFF1E3A8A),
+                          backgroundColor: Color(0xFF1E3A8A),
+                          foregroundColor: Colors.white,
                           padding: EdgeInsets.symmetric(
                               horizontal: 24, vertical: 12),
                           shape: RoundedRectangleBorder(
@@ -154,8 +152,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -165,14 +163,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       crossAxisAlignment:
           CrossAxisAlignment.stretch, // Stretch children horizontally
       children: [
-        // Image section - now acts as the "card" with all four rounded corners
+        // Image section - now acts as the "card" with sharp top and rounded bottom corners
         Container(
-          margin: EdgeInsets.fromLTRB(
-              24, 24, 24, 0), // Margin from screen edges, no bottom margin
+          margin: EdgeInsets.fromLTRB(0, 0, 0, 0),
           decoration: BoxDecoration(
-            color: Colors.white, // White background for the image area
-            borderRadius:
-                BorderRadius.circular(24), // Rounded corners on ALL four sides
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.1),
@@ -182,9 +178,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             ],
           ),
           child: ClipRRect(
-            // Clip the image to match the container's rounded corners
-            borderRadius:
-                BorderRadius.circular(24), // Rounded corners on ALL four sides
+            // Clip the image to match the container's bottom corners
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
             child: _buildImageWidget(page), // Image fills this container
           ),
         ),
@@ -201,7 +196,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.bold,
-              color: Colors.white, // Text color is white
+              color: Color(0xFF111827), // Changed to primary text color
             ),
             textAlign: TextAlign.center,
           ),
@@ -217,8 +212,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             page.description,
             style: TextStyle(
               fontSize: 16,
-              color: Colors.white
-                  .withOpacity(0.8), // Text color is white with opacity
+              color: Color(0xFF6B7280), // Changed to secondary text color
               height: 1.5,
             ),
             textAlign: TextAlign.center,
@@ -240,7 +234,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     );
 
     return Container(
-      height: 350, // Increased height for the image section to make it larger
+      height: 280, // Adjusted height for the image section
       width: double.infinity, // Take full width of its parent (the white card)
       color:
           Color(0xFF1E3A8A).withOpacity(0.1), // Background for fallback/loading
@@ -276,8 +270,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       height: 8,
       decoration: BoxDecoration(
         color: _currentPage == index
-            ? Colors.white
-            : Colors.white.withOpacity(0.3),
+            ? Color(0xFF1E3A8A) // Changed to primary blue
+            : Color(0xFF1E3A8A)
+                .withOpacity(0.3), // Changed to primary blue with opacity
         borderRadius: BorderRadius.circular(4),
       ),
     );

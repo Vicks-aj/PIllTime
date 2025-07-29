@@ -3,136 +3,191 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 
 class AuthService {
-  static const String _userKey = 'current_user';
-  static const String _isLoggedInKey = 'is_logged_in';
+  static const String _usersKey = 'users';
+  static const String _currentUserKey = 'current_user';
+  static const String _passwordResetKey = 'password_reset_tokens';
 
-  // Simulate user registration
   Future<bool> signUp(UserModel user, String password) async {
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 2));
+      final prefs = await SharedPreferences.getInstance();
 
-      // In a real app, you would make an API call to your backend
-      // For now, we'll simulate a successful registration
+      // Get existing users
+      final usersJson = prefs.getString(_usersKey) ?? '[]';
+      final List<dynamic> usersList = jsonDecode(usersJson);
 
-      // Generate a mock user ID
-      final userWithId = user.copyWith(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
+      // Check if user already exists
+      final existingUser = usersList.firstWhere(
+        (u) => u['email'] == user.email,
+        orElse: () => null,
       );
 
-      // Save user data locally
-      await _saveUserData(userWithId);
-      await _setLoggedInStatus(true);
+      if (existingUser != null) {
+        return false; // User already exists
+      }
+
+      // Add new user
+      final userData = user.toJson();
+      userData['password'] = password; // In a real app, hash this!
+      usersList.add(userData);
+
+      // Save users
+      await prefs.setString(_usersKey, jsonEncode(usersList));
+
+      // Set as current user
+      await prefs.setString(_currentUserKey, jsonEncode(userData));
 
       return true;
     } catch (e) {
-      print('Sign up error: $e');
+      print('Error signing up: $e');
       return false;
     }
   }
 
-  // Simulate user sign in
   Future<bool> signIn(String email, String password) async {
     try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
+      final prefs = await SharedPreferences.getInstance();
 
-      // In a real app, you would validate credentials with your backend
-      // For now, we'll simulate a successful sign in
+      // Get existing users
+      final usersJson = prefs.getString(_usersKey) ?? '[]';
+      final List<dynamic> usersList = jsonDecode(usersJson);
 
-      return true;
+      // Find user
+      final userData = usersList.firstWhere(
+        (u) => u['email'] == email && u['password'] == password,
+        orElse: () => null,
+      );
+
+      if (userData != null) {
+        // Set as current user
+        await prefs.setString(_currentUserKey, jsonEncode(userData));
+        return true;
+      }
+
+      return false;
     } catch (e) {
-      print('Sign in error: $e');
+      print('Error signing in: $e');
       return false;
     }
   }
 
-  // Sign out user
-  Future<void> signOut() async {
+  Future<bool> sendPasswordResetEmail(String email) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_userKey);
-      await prefs.setBool(_isLoggedInKey, false);
+
+      // Get existing users
+      final usersJson = prefs.getString(_usersKey) ?? '[]';
+      final List<dynamic> usersList = jsonDecode(usersJson);
+
+      // Check if user exists
+      final userExists = usersList.any((u) => u['email'] == email);
+
+      if (userExists) {
+        // Generate a reset token (in a real app, this would be sent via email)
+        final resetToken = DateTime.now().millisecondsSinceEpoch.toString();
+
+        // Store reset token
+        final resetTokensJson = prefs.getString(_passwordResetKey) ?? '{}';
+        final Map<String, dynamic> resetTokens = jsonDecode(resetTokensJson);
+        resetTokens[email] = {
+          'token': resetToken,
+          'expires': DateTime.now().add(Duration(hours: 1)).toIso8601String(),
+        };
+
+        await prefs.setString(_passwordResetKey, jsonEncode(resetTokens));
+
+        // In a real app, you would send an email here
+        print('Password reset token for $email: $resetToken');
+
+        return true;
+      }
+
+      return false; // User not found
     } catch (e) {
-      print('Sign out error: $e');
+      print('Error sending password reset email: $e');
+      return false;
     }
   }
 
-  // Check if user is logged in
+  Future<bool> resetPassword(
+      String email, String token, String newPassword) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // Check reset token
+      final resetTokensJson = prefs.getString(_passwordResetKey) ?? '{}';
+      final Map<String, dynamic> resetTokens = jsonDecode(resetTokensJson);
+
+      if (resetTokens.containsKey(email)) {
+        final tokenData = resetTokens[email];
+        final tokenExpires = DateTime.parse(tokenData['expires']);
+
+        if (tokenData['token'] == token &&
+            DateTime.now().isBefore(tokenExpires)) {
+          // Token is valid, update password
+          final usersJson = prefs.getString(_usersKey) ?? '[]';
+          final List<dynamic> usersList = jsonDecode(usersJson);
+
+          // Find and update user
+          for (int i = 0; i < usersList.length; i++) {
+            if (usersList[i]['email'] == email) {
+              usersList[i]['password'] = newPassword;
+              break;
+            }
+          }
+
+          // Save updated users
+          await prefs.setString(_usersKey, jsonEncode(usersList));
+
+          // Remove used token
+          resetTokens.remove(email);
+          await prefs.setString(_passwordResetKey, jsonEncode(resetTokens));
+
+          return true;
+        }
+      }
+
+      return false; // Invalid or expired token
+    } catch (e) {
+      print('Error resetting password: $e');
+      return false;
+    }
+  }
+
+  Future<bool> signOut() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_currentUserKey);
+      return true;
+    } catch (e) {
+      print('Error signing out: $e');
+      return false;
+    }
+  }
+
   Future<bool> isLoggedIn() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool(_isLoggedInKey) ?? false;
+      return prefs.containsKey(_currentUserKey);
     } catch (e) {
-      print('Check login status error: $e');
+      print('Error checking login status: $e');
       return false;
     }
   }
 
-  // Get current user
   Future<UserModel?> getCurrentUser() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final userJson = prefs.getString(_userKey);
+      final userJson = prefs.getString(_currentUserKey);
 
       if (userJson != null) {
-        final userMap = jsonDecode(userJson);
-        return UserModel.fromJson(userMap);
+        final userData = jsonDecode(userJson);
+        return UserModel.fromJson(userData);
       }
 
       return null;
     } catch (e) {
-      print('Get current user error: $e');
+      print('Error getting current user: $e');
       return null;
     }
-  }
-
-  // Update user profile
-  Future<bool> updateProfile(UserModel user) async {
-    try {
-      // Simulate API call delay
-      await Future.delayed(const Duration(seconds: 1));
-
-      // Update user data locally
-      final updatedUser = user.copyWith(updatedAt: DateTime.now());
-      await _saveUserData(updatedUser);
-
-      return true;
-    } catch (e) {
-      print('Update profile error: $e');
-      return false;
-    }
-  }
-
-  // Private helper methods
-  Future<void> _saveUserData(UserModel user) async {
-    final prefs = await SharedPreferences.getInstance();
-    final userJson = jsonEncode(user.toJson());
-    await prefs.setString(_userKey, userJson);
-  }
-
-  Future<void> _setLoggedInStatus(bool status) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_isLoggedInKey, status);
-  }
-
-  // Validate email format
-  bool isValidEmail(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
-  }
-
-  // Validate password strength
-  bool isValidPassword(String password) {
-    // At least 8 characters
-    if (password.length < 8) return false;
-
-    // Contains at least one letter and one number
-    final hasLetter = RegExp(r'[a-zA-Z]').hasMatch(password);
-    final hasNumber = RegExp(r'[0-9]').hasMatch(password);
-
-    return hasLetter && hasNumber;
   }
 }

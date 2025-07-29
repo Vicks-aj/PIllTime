@@ -20,6 +20,10 @@ dependencies:
   
   # Utilities
   intl: ^0.18.1
+  
+  # Local Notifications (Ensuring these are present)
+  flutter_local_notifications: ^17.2.2
+  timezone: ^0.9.4
 
 dev_dependencies:
   flutter_test:
@@ -28,11 +32,8 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
-  
   # Assets
-  #assets:
-    #- assets/images/
-    #- assets/icons/
-  
+  assets:
+    - assets/images/
+    - assets/icons/
   # Fonts
-  

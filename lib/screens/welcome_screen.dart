@@ -4,7 +4,7 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Color(0xFFFFFFFF), // White background
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -19,7 +19,7 @@ class WelcomeScreen extends StatelessWidget {
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF2E7D8A),
+                  color: Color(0xFF1E3A8A), // Primary blue
                   borderRadius: BorderRadius.circular(60),
                 ),
                 child: const Icon(
@@ -34,7 +34,11 @@ class WelcomeScreen extends StatelessWidget {
               // App Title
               Text(
                 'PillTime',
-                style: Theme.of(context).textTheme.headlineSmall,
+                style: TextStyle(
+                  fontSize: 32,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF111827), // Primary text
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -43,10 +47,11 @@ class WelcomeScreen extends StatelessWidget {
               // Subtitle
               Text(
                 'Never miss your medication again',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.normal,
-                      color: const Color(0xFF666666),
-                    ),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.normal,
+                  color: Color(0xFF6B7280), // Secondary text
+                ),
                 textAlign: TextAlign.center,
               ),
 
@@ -55,38 +60,41 @@ class WelcomeScreen extends StatelessWidget {
               // Description
               Text(
                 'Take control of your health with timely reminders and easy prescription management',
-                style: Theme.of(context).textTheme.bodyMedium,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Color(0xFF6B7280), // Secondary text
+                ),
                 textAlign: TextAlign.center,
               ),
 
               const Spacer(flex: 3),
 
-              // Get Started Button
+              // Sign Up Button (changed from "Get Started")
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pushNamed(context, '/signup');
                   },
-                  child: const Text('Get Started'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF1E3A8A), // Primary blue
+                    foregroundColor: Colors.white,
+                  ),
+                  child: const Text('Sign Up'),
                 ),
               ),
 
               const SizedBox(height: 16),
 
-              // Sign In Link
+              // Sign In Link (now actually works)
               TextButton(
                 onPressed: () {
-                  // TODO: Navigate to sign in screen
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('Sign in feature coming soon!')),
-                  );
+                  Navigator.pushNamed(context, '/login');
                 },
-                child: const Text(
+                child: Text(
                   'Already have an account? Sign In',
                   style: TextStyle(
-                    color: Color(0xFF2E7D8A),
+                    color: Color(0xFF1E3A8A), // Primary blue
                     fontSize: 16,
                   ),
                 ),
